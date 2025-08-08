@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings
 
 class Env(BaseSettings):
     playwright_debug: bool = False
+    api_port: int = 8000
 
     @classmethod
     @lru_cache(maxsize=1)
