@@ -6,6 +6,8 @@
 
 Aggregate search for historical primary source documents
 
+Draft of all source collections can be found [here](https://docs.google.com/document/d/12U8FFYYxbLBKYDWYA8Xd6YncdvJNj2mBaKtE2WPdYNo/edit?usp=sharing)
+
 
 ## Contributing / Development
 

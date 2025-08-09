@@ -8,7 +8,7 @@ from playwright.async_api import Browser, Playwright, async_playwright
 from pydantic import BaseModel
 
 from historical_sources_search.env import Env
-from historical_sources_search.search import Search
+from historical_sources_search.search import search_all
 from historical_sources_search.search_result import SearchResult
 
 LOGGER = logging.getLogger(__name__)
@@ -62,6 +62,6 @@ class SearchResponse(BaseModel):
 
 @api.post("/search")
 async def post_search(request: SearchRequest, httpx_client: HttpxClientDep, browser: BrowserDep) -> SearchResponse:
-    search = Search(request.query, httpx_client, browser)
-    await search.execute()
-    return SearchResponse(query=search.query, results=search.results)
+    results = [result async for result in search_all(request.query, httpx_client, browser)]
+    # TODO: stream results
+    return SearchResponse(query=request.query, results=results)
