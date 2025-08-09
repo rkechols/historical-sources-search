@@ -2,8 +2,10 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from playwright.async_api import async_playwright
 from pydantic import BaseModel
 
+from historical_sources_search.env import Env
 from historical_sources_search.search import Search
 from historical_sources_search.search_result import SearchResult
 
@@ -13,7 +15,13 @@ LOGGER = logging.getLogger(__name__)
 @asynccontextmanager
 async def _lifespan(api_: FastAPI):
     LOGGER.info(f"lifespan start ({api_})")
-    yield
+    env = Env.get()
+    pw_cm = async_playwright()
+    async with pw_cm as pw:
+        browser = await pw.chromium.launch(headless=(not env.playwright_debug), channel="chromium")
+        LOGGER.info(f"{browser.browser_type.name = }")
+        async with browser:
+            yield
     LOGGER.info(f"lifespan end ({api_})")
 
 
