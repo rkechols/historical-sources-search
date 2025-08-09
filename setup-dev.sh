@@ -13,7 +13,7 @@ fi
 uv sync --locked
 
 # make sure the Chromium browser is installed
-uv run playwright install --with-deps chromium
+uv run playwright install chromium --no-shell --with-deps
 
 if [ ! -f .env ] ; then
     echo "Copying .env.sample --> .env"
