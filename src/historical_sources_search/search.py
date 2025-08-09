@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 from playwright.async_api import Browser
 
 from historical_sources_search.search_result import SearchResult
@@ -14,9 +15,10 @@ SOURCE_COLLECTIONS: list[SourceCollectionBase] = [
 
 
 class Search:
-    def __init__(self, query: str, browser: Browser):
+    def __init__(self, query: str, httpx_client: httpx.AsyncClient, browser: Browser):
         super().__init__()
         self.query = query
+        self.httpx_client = httpx_client
         self.browser = browser
         self._results: list[SearchResult] = []
 
@@ -25,6 +27,7 @@ class Search:
         return self._results
 
     async def execute(self):
+        LOGGER.debug(f"{self.httpx_client = }")
         LOGGER.debug(f"{self.browser.browser_type.name = }")
         # TODO: use a queue and workers
         for source_collection in SOURCE_COLLECTIONS:
