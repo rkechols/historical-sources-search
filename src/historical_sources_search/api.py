@@ -1,8 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
+from typing import Annotated, cast
 
-from fastapi import FastAPI
-from playwright.async_api import async_playwright
+from fastapi import Depends, FastAPI, Request
+from playwright.async_api import Browser, Playwright, async_playwright
 from pydantic import BaseModel
 
 from historical_sources_search.env import Env
@@ -16,13 +17,20 @@ LOGGER = logging.getLogger(__name__)
 async def _lifespan(api_: FastAPI):
     LOGGER.info(f"lifespan start ({api_})")
     env = Env.get()
-    pw_cm = async_playwright()
-    async with pw_cm as pw:
-        browser = await pw.chromium.launch(headless=(not env.playwright_debug), channel="chromium")
-        LOGGER.info(f"{browser.browser_type.name = }")
-        async with browser:
-            yield
+    async with (
+        async_playwright() as pw,
+        await cast(Playwright, pw).chromium.launch(channel="chromium", headless=(not env.playwright_debug)) as browser,
+    ):
+        api_.state.browser = browser
+        yield
     LOGGER.info(f"lifespan end ({api_})")
+
+
+async def _browser_dep(request: Request) -> Browser:
+    return request.app.state.browser
+
+
+BrowserDep = Annotated[Browser, Depends(_browser_dep)]
 
 
 api = FastAPI(lifespan=_lifespan)
@@ -43,7 +51,7 @@ class SearchResponse(BaseModel):
 
 
 @api.post("/search")
-async def post_search(request: SearchRequest) -> SearchResponse:
-    search = Search(request.query)
+async def post_search(request: SearchRequest, browser: BrowserDep) -> SearchResponse:
+    search = Search(request.query, browser)
     await search.execute()
     return SearchResponse(query=search.query, results=search.results)

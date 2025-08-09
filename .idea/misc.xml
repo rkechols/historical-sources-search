@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13 (historical-sources-search)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (historical-sources-search)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13.6 WSL (Ubuntu-22.04): (/home/echols14/code/emma/historical-sources-search/.venv/bin/python)" project-jdk-type="Python SDK" />
 </project>
