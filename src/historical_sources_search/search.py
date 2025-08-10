@@ -13,7 +13,6 @@ LOGGER = logging.getLogger(__name__)
 
 async def search_all(query: str, httpx_client: httpx.AsyncClient, browser: Browser) -> AsyncIterable[SearchResult]:
     LOGGER.debug(f"{httpx_client = }")
-    LOGGER.debug(f"{browser.browser_type.name = }")
 
     collections: list[CollectionBase] = [
         CollectionFacingHistory(browser),

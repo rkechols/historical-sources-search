@@ -65,11 +65,17 @@ class CollectionFacingHistory(CollectionBase):
 
                 await page.get_by_role("button", name="Close").click()
 
+                try:
+                    await pw_expect(page.locator(".search-no-results-message")).to_be_visible(timeout=2_000)
+                except AssertionError:  # does *not* have a "no results" message
+                    pass
+                else:  # *does* have a "no results" message
+                    LOGGER.info(f"No results found for query {query!r}")
+                    return
+
                 page_number = 1
                 while True:  # turn through all pages
                     LOGGER.debug(f"Page number {page_number} of query {query!r}")
-
-                    # TODO: what if there are no results at all?
 
                     card_list = page.locator(".card-list")
                     await pw_expect(card_list).to_be_visible(timeout=10_000)
