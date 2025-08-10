@@ -6,6 +6,13 @@
 
 Aggregate search for historical primary source documents
 
+## Source Document Collections
+
+The following collections are integrated into the aggregate search tool:
+- [Facing History](https://www.facinghistory.org/resource-library)
+
+A list of all source collections we intend to integrate can be found [here](https://docs.google.com/document/d/12U8FFYYxbLBKYDWYA8Xd6YncdvJNj2mBaKtE2WPdYNo/edit?usp=sharing)
+
 
 ## Contributing / Development
 
