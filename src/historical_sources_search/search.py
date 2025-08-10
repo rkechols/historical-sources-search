@@ -16,7 +16,7 @@ async def search_all(query: str, httpx_client: httpx.AsyncClient, browser: Brows
     LOGGER.debug(f"{browser.browser_type.name = }")
 
     collections: list[CollectionBase] = [
-        CollectionFacingHistory(httpx_client, browser),
+        CollectionFacingHistory(browser),
         # TODO: add more collections
     ]
 

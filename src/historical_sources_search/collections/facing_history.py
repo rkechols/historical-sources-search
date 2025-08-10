@@ -7,11 +7,11 @@ from collections.abc import AsyncIterable
 from typing import override
 from urllib.parse import urlencode, urljoin
 
-import httpx
 from playwright.async_api import Browser, TimeoutError as PlaywrightTimeoutError, expect as pw_expect
 
 from historical_sources_search.collections.base import CollectionBase
 from historical_sources_search.env import PLAYWRIGHT_TRACES_DIR, Env
+from historical_sources_search.exceptions import NavigationError
 from historical_sources_search.search_result import CollectionInfo, SearchResult
 
 LOGGER = logging.getLogger(__name__)
@@ -32,14 +32,13 @@ class CollectionFacingHistory(CollectionBase):
     falls within the bounds of exception (1).
     """  # noqa: RUF002
 
-    def __init__(self, httpx_client: httpx.AsyncClient, browser: Browser):
+    def __init__(self, browser: Browser):
         super().__init__(
             collection_info=CollectionInfo(
                 name="Facing History",
                 url="https://www.facinghistory.org/resource-library",
             ),
         )
-        self.httpx_client = httpx_client
         self.browser = browser
 
     @override
@@ -61,16 +60,14 @@ class CollectionFacingHistory(CollectionBase):
                 )
                 search_url = f"https://www.facinghistory.org/resource-library?{url_params}"
                 response = await page.goto(search_url)
-                if response is not None:
-                    LOGGER.debug(f"Navigation response status: {response.status}")
+                if response is not None and not response.ok:
+                    raise NavigationError(f"Navigation to `{search_url}` failed with status {response.status}")
 
                 await page.get_by_role("button", name="Close").click()
-                # await page.locator("[data-test-id=\"interactive-frame\"]").content_frame.get_by_role("button", name="Close").click()
-                # await page.get_by_role("button", name="Change view mode").click()
 
                 page_number = 1
                 while True:  # turn through all pages
-                    LOGGER.debug(f"Page number: {page_number}")
+                    LOGGER.debug(f"Page number {page_number} of query {query!r}")
 
                     # TODO: what if there are no results at all?
 

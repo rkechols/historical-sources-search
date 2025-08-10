@@ -16,7 +16,6 @@ LOGGER = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def _lifespan(api_: FastAPI):
-    LOGGER.info(f"lifespan start ({api_})")
     env = Env.get()
     async with (
         httpx.AsyncClient(follow_redirects=True) as httpx_client,
@@ -26,7 +25,6 @@ async def _lifespan(api_: FastAPI):
         api_.state.httpx_client = httpx_client
         api_.state.browser = browser
         yield
-    LOGGER.info(f"lifespan end ({api_})")
 
 
 async def _httpx_client_dep(request: Request) -> httpx.AsyncClient:
