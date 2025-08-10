@@ -85,7 +85,6 @@ class CollectionFacingHistory(CollectionBase):
                             await pw_expect(card).to_be_visible(timeout=(10_000 if i == 0 else 500))
                         except AssertionError:
                             break  # no more results on this page
-                        await card.scroll_into_view_if_needed()
 
                         card_link = card.locator("a.card__link")
                         card_link_href = await card_link.get_attribute("href")
