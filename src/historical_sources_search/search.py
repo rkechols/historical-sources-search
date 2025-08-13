@@ -38,8 +38,9 @@ async def search_all(query: str, httpx_client: httpx.AsyncClient, browser: Brows
     results_queue = asyncio.Queue[SearchResult]()
 
     async def _run_workers():
+        n_workers = min(len(collections), Env.get().n_search_workers)
         async with asyncio.TaskGroup() as tg:
-            for _ in range(Env.get().n_search_workers):
+            for _ in range(n_workers):
                 tg.create_task(_search_worker(query, collections=collections, results_queue=results_queue))
             # the `asyncio.TaskGroup` context manager waits for workers to finish before closing
         results_queue.shutdown()
