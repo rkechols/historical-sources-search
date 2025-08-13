@@ -6,6 +6,7 @@ from playwright.async_api import Browser
 
 from historical_sources_search.collections.base import CollectionBase
 from historical_sources_search.collections.facing_history import CollectionFacingHistory
+from historical_sources_search.collections.library_of_congress import CollectionLibraryOfCongress
 from historical_sources_search.search_result import SearchResult
 
 LOGGER = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ async def search_all(query: str, httpx_client: httpx.AsyncClient, browser: Brows
 
     collections: list[CollectionBase] = [
         CollectionFacingHistory(browser),
+        CollectionLibraryOfCongress(browser),
         # TODO: add more collections
     ]
 
