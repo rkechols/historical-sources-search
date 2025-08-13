@@ -71,7 +71,6 @@ class CollectionLibraryOfCongress(CollectionBase):
                         try:
                             await pw_expect(item).to_be_visible(timeout=(10_000 if i == 0 else 500))
                         except AssertionError:
-                            LOGGER.warning(f"{i} result(s) found on page {page_number}")
                             break  # no more results on this page
 
                         item_title = item.locator(".item-description-title").locator("a")
