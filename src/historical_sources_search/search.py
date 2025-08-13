@@ -9,11 +9,10 @@ from playwright.async_api import Browser
 from historical_sources_search.collections.base import CollectionBase
 from historical_sources_search.collections.facing_history import CollectionFacingHistory
 from historical_sources_search.collections.library_of_congress import CollectionLibraryOfCongress
+from historical_sources_search.env import Env
 from historical_sources_search.search_result import SearchResult
 
 LOGGER = logging.getLogger(__name__)
-
-_N_WORKERS = 10
 
 
 async def _search_worker(query: str, *, collections: deque[CollectionBase], results_queue: asyncio.Queue[SearchResult]):
@@ -40,7 +39,7 @@ async def search_all(query: str, httpx_client: httpx.AsyncClient, browser: Brows
 
     async def _run_workers():
         async with asyncio.TaskGroup() as tg:
-            for _ in range(_N_WORKERS):  # number of workers
+            for _ in range(Env.get().n_search_workers):
                 tg.create_task(_search_worker(query, collections=collections, results_queue=results_queue))
             # the `asyncio.TaskGroup` context manager waits for workers to finish before closing
         results_queue.shutdown()

@@ -11,6 +11,7 @@ PLAYWRIGHT_TRACES_DIR = MEDIA_DIR / "traces"
 class Env(BaseSettings):
     playwright_debug: bool = False
     api_port: int = 8000
+    n_search_workers: int = 10
 
     @classmethod
     @lru_cache(maxsize=1)
