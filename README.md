@@ -11,6 +11,7 @@ Aggregate search for historical primary source documents
 The following collections are integrated into the aggregate search tool:
 - [Facing History](https://www.facinghistory.org/resource-library)
 - [Classroom Materials at the Library of Congress](https://www.loc.gov/classroom-materials/?fa=partof_type%3Aprimary+source+set)
+- [Constitution Annotated](https://constitution.congress.gov/)
 
 A list of all source collections we intend to integrate can be found [here](https://docs.google.com/document/d/12U8FFYYxbLBKYDWYA8Xd6YncdvJNj2mBaKtE2WPdYNo/edit?usp=sharing)
 
