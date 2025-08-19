@@ -7,6 +7,7 @@ import httpx
 from playwright.async_api import Browser
 
 from historical_sources_search.collections.base import CollectionBase
+from historical_sources_search.collections.constitution_annotated import CollectionConstitutionAnnotated
 from historical_sources_search.collections.facing_history import CollectionFacingHistory
 from historical_sources_search.collections.library_of_congress import CollectionLibraryOfCongress
 from historical_sources_search.env import Env
@@ -32,6 +33,7 @@ async def search_all(query: str, httpx_client: httpx.AsyncClient, browser: Brows
         [
             CollectionFacingHistory(browser),
             CollectionLibraryOfCongress(browser),
+            CollectionConstitutionAnnotated(browser),
             # TODO: add more collections
         ]
     )
