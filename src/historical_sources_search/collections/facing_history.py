@@ -1,19 +1,15 @@
-import logging
 import re
-from collections.abc import AsyncIterable
 from typing import override
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode
 
-from playwright.async_api import Browser, TimeoutError as PlaywrightTimeoutError, expect as pw_expect
+from playwright.async_api import Browser, Locator, Page, TimeoutError as PlaywrightTimeoutError, expect as pw_expect
 
-from historical_sources_search.collections.base import CollectionBase
-from historical_sources_search.exceptions import NavigationError
-from historical_sources_search.search_result import CollectionInfo, SearchResult
-
-LOGGER = logging.getLogger(__name__)
+from historical_sources_search.collections.base_browser_paging import CollectionBaseBrowserPaging
+from historical_sources_search.exceptions import MissingInformationError, NavigationError
+from historical_sources_search.search_result import CollectionInfo
 
 
-class CollectionFacingHistory(CollectionBase):
+class CollectionFacingHistory(CollectionBaseBrowserPaging):
     """
     https://www.facinghistory.org/robots.txt includes the following restriction:
 
@@ -30,96 +26,75 @@ class CollectionFacingHistory(CollectionBase):
 
     def __init__(self, browser: Browser):
         super().__init__(
+            browser=browser,
             collection_info=CollectionInfo(
                 name="Facing History",
                 url="https://www.facinghistory.org/resource-library",
             ),
         )
-        self.browser = browser
 
     @override
-    async def search(self, query: str) -> AsyncIterable[SearchResult]:
-        async with (
-            await self.browser.new_context() as browser_context,
-            await browser_context.new_page() as page,
-        ):
-            url_params = urlencode(
-                {
-                    "keys": query,
-                    "sort_by": "search_api_relevance",
-                    "items_per_page": "48",
-                }
-            )
-            search_url = f"https://www.facinghistory.org/resource-library?{url_params}"
-            response = await page.goto(search_url)
-            if response is not None and not response.ok:
-                raise NavigationError(f"Navigation to `{search_url}` failed with status {response.status}")
+    async def _enter_query(self, page: Page, query: str):
+        url_params = urlencode(
+            {
+                "keys": query,
+                "sort_by": "search_api_relevance",
+                "items_per_page": "48",
+            }
+        )
+        search_url = f"https://www.facinghistory.org/resource-library?{url_params}"
+        response = await page.goto(search_url)
+        if response is not None and not response.ok:
+            raise NavigationError(f"Navigation to `{search_url}` failed with status {response.status}")
+        await page.get_by_role("button", name="Close").click()
 
-            await page.get_by_role("button", name="Close").click()
+    @override
+    def _get_locator_no_results(self, page: Page) -> Locator:
+        return page.locator(".search-no-results-message")
 
-            try:
-                await pw_expect(page.locator(".search-no-results-message")).to_be_visible(timeout=2_000)
-            except AssertionError:  # does *not* have a "no results" message
-                pass
-            else:  # *does* have a "no results" message
-                LOGGER.info(f"No results found for query {query!r}")
-                return
+    @override
+    def _get_locator_result_by_index(self, page: Page, index: int) -> Locator:
+        return page.locator(".card-list").locator(".card").nth(index)
 
-            page_number = 1
-            while True:  # turn through all pages
-                LOGGER.debug(f"Page number {page_number} of query {query!r}")
+    @override
+    async def _get_result_url(self, page: Page, result_locator: Locator) -> str:
+        card_link = result_locator.locator("a.card__link")
+        card_link_href = await card_link.get_attribute("href")
+        if not card_link_href:
+            card_link_html = await card_link.inner_html()
+            raise MissingInformationError(f"Search result did not have an href: {card_link_html}")
+        return card_link_href
 
-                card_list = page.locator(".card-list")
-                await pw_expect(card_list).to_be_visible(timeout=10_000)
-                page_url = page.url
+    @override
+    async def _get_result_title(self, page: Page, result_locator: Locator) -> str:
+        return await result_locator.locator(".card__header").inner_text(timeout=500)
 
-                i = 0
-                while True:  # get all results from this page
-                    card = card_list.locator(".card").nth(i)
-                    try:
-                        await pw_expect(card).to_be_visible(timeout=(10_000 if i == 0 else 500))
-                    except AssertionError:
-                        break  # no more results on this page
+    @override
+    async def _get_result_detail(self, page: Page, result_locator: Locator) -> str | None:
+        return await result_locator.locator(".card__summary").inner_text(timeout=500)
 
-                    card_link = card.locator("a.card__link")
-                    card_link_href = await card_link.get_attribute("href")
-                    if not card_link_href:
-                        card_link_html = await card_link.inner_html()
-                        LOGGER.warning(f"Search result did not have an href: {card_link_html}")
-                        continue
-                    card_link_href = urljoin(page_url, card_link_href)
+    @override
+    async def _get_result_image_src(self, page: Page, result_locator: Locator) -> str | None:
+        card_image = result_locator.locator(".card__image").locator("img")
+        try:
+            return await card_image.get_attribute("src", timeout=500)
+        except PlaywrightTimeoutError:
+            return None
 
-                    card_header = (await card.locator(".card__header").inner_text()).strip()
-                    card_summary = (await card.locator(".card__summary").inner_text()).strip()
-                    card_image = card.locator(".card__image").locator("img")
-                    try:
-                        card_image_src = await card_image.get_attribute("src", timeout=500)
-                    except PlaywrightTimeoutError:
-                        card_image_src = None
-                    else:
-                        if card_image_src:
-                            card_image_src = urljoin(page_url, card_image_src)
-
-                    yield SearchResult(
-                        url=card_link_href,
-                        title=card_header,
-                        detail=card_summary,
-                        image_src=card_image_src,
-                        provided_by_collection=self.collection_info,
-                    )
-                    i += 1
-
-                # advance the page, if possible
-                next_page_button = page.locator("li.pager__item--next")
-                try:
-                    await pw_expect(next_page_button).to_be_visible(timeout=1_000)
-                except AssertionError:
-                    break  # no more pages
-                await next_page_button.click()
-                page_number += 1
-                # make sure the new page is loaded
-                await pw_expect(page.locator(".pager__link.is-active")).to_have_text(
-                    re.compile(f"\\b{page_number}\\b"),
-                    use_inner_text=True,
-                    timeout=30_000,
-                )
+    @override
+    async def _advance_page(self, page: Page, current_page_index: int) -> bool:
+        current_page_number = current_page_index + 1
+        next_page_button = page.locator("li.pager__item--next")
+        try:
+            await pw_expect(next_page_button).to_be_visible(timeout=1_000)
+        except AssertionError:
+            return False  # no more pages
+        await next_page_button.click()
+        # make sure the new page is loaded
+        new_page_number = current_page_number + 1
+        await pw_expect(page.locator(".pager__link.is-active")).to_have_text(
+            re.compile(f"\\b{new_page_number}\\b"),
+            use_inner_text=True,
+            timeout=30_000,
+        )
+        return True

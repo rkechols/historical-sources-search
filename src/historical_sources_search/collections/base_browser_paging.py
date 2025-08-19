@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from playwright.async_api import Browser, Locator, Page, expect as pw_expect
 
 from historical_sources_search.collections.base import CollectionBase
+from historical_sources_search.exceptions import MissingInformationError
 from historical_sources_search.search_result import CollectionInfo, SearchResult
 
 LOGGER = logging.getLogger(__name__)
@@ -70,6 +71,11 @@ class CollectionBaseBrowserPaging(CollectionBase):
         Advance to the next page of search results.
         Parameter `current_page_index` indicates the current page displayed,
         with `current_page_index=0` indicating the first page of results is currently displayed.
+
+        NOTE: this method should do its best to ensure the new page is fully loaded.
+
+        If there are no more pages of results, return `False`.
+        If the next page of results was successfully loaded, return `True`.
         """
         raise NotImplementedError("Must be implemented by child class")
 
@@ -86,7 +92,7 @@ class CollectionBaseBrowserPaging(CollectionBase):
 
             # wait for page to load either the first result or a "no result" element
             await pw_expect(locator_first_result.or_(locator_no_results).first).to_be_visible(timeout=30_000)
-            if locator_no_results.is_visible():
+            if await locator_no_results.is_visible():
                 LOGGER.info(f"No results found for query {query!r}")
                 return
 
@@ -103,20 +109,28 @@ class CollectionBaseBrowserPaging(CollectionBase):
                     except AssertionError:
                         break  # no more results on this page
 
-                    result_url = await self._get_result_url(page, result_locator)
-                    result_url = urljoin(page_url, result_url)
-                    result_title = await self._get_result_title(page, result_locator)
-                    result_detail = await self._get_result_detail(page, result_locator)
-                    result_image_src = await self._get_result_image_src(page, result_locator)
-                    if result_image_src is not None:
-                        result_image_src = urljoin(page_url, result_image_src)
-                    yield SearchResult(
-                        url=result_url,
-                        title=result_title,
-                        detail=result_detail,
-                        image_src=result_image_src,
-                        provided_by_collection=self.collection_info,
-                    )
+                    try:
+                        result_url = await self._get_result_url(page, result_locator)
+                        result_url = urljoin(page_url, result_url)
+                        result_title = await self._get_result_title(page, result_locator)
+                        result_title = result_title.strip()
+                        result_detail = await self._get_result_detail(page, result_locator)
+                        if result_detail is not None:
+                            result_detail = result_detail.strip()
+                        result_image_src = await self._get_result_image_src(page, result_locator)
+                        if result_image_src is not None:
+                            result_image_src = urljoin(page_url, result_image_src)
+                    except MissingInformationError:
+                        LOGGER.warning(f"Skipping {page_index=} {i=} because of missing information", exc_info=True)
+                        # don't forget to increment `i` even though we're skipping this one
+                    else:
+                        yield SearchResult(
+                            url=result_url,
+                            title=result_title,
+                            detail=result_detail,
+                            image_src=result_image_src,
+                            provided_by_collection=self.collection_info,
+                        )
                     i += 1
 
                 advance_success = await self._advance_page(page, page_index)
