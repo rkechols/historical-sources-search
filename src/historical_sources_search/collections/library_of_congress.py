@@ -68,8 +68,8 @@ class CollectionLibraryOfCongress(CollectionBase):
                     item_title = item.locator(".item-description-title").locator("a")
                     item_title_href = await item_title.get_attribute("href")
                     if not item_title_href:
-                        card_title_html = await item_title.inner_html()
-                        LOGGER.warning(f"Search result did not have an href: {card_title_html}")
+                        item_title_html = await item_title.inner_html()
+                        LOGGER.warning(f"Search result did not have an href: {item_title_html}")
                         continue
                     item_title_href = urljoin(page_url, item_title_href)
                     item_title_str = (await item_title.inner_text()).strip()
