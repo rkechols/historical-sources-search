@@ -60,6 +60,8 @@ class SearchResponse(BaseModel):
 
 @api.post("/search")
 async def post_search(request: SearchRequest, httpx_client: HttpxClientDep, browser: BrowserDep) -> SearchResponse:
+    LOGGER.info(f"Starting search with query {request.query!r}")
     results = [result async for result in search_all(request.query, httpx_client, browser)]
     # TODO: stream results
+    LOGGER.info(f"Found {len(results)} result(s) for query {request.query!r}")
     return SearchResponse(query=request.query, results=results)
