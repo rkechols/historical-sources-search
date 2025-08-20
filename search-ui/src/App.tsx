@@ -33,7 +33,9 @@ function App() {
       <h1>Historical Sources Search</h1>
       <a href="https://github.com/rkechols/historical-sources-search" target="_blank" rel="noopener noreferrer">
         Source Code on GitHub
-        <FaGithub alt="GitHub logo" />
+        <span aria-hidden="true">
+          <FaGithub />
+        </span>
       </a>
       <div className="card">
         <input id="search-query" aria-label="search-query" type="text" placeholder="Type your search query here" ref={queryInputRef} />
