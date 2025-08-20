@@ -28,5 +28,16 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      "semi": ["error", "never"],
+      "quotes": ["error", "double"],
+      "react/prop-types": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/consistent-type-imports": "error",
+      // "react/self-closing-comp": "error",
+      // "react/jsx-key": "error",
+      "eqeqeq": "error",
+      "prefer-const": "error",
+    },
   },
 ])
