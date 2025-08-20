@@ -1,92 +1,73 @@
 import logging
-from collections.abc import AsyncIterable
 from typing import override
-from urllib.parse import quote as url_escape, urljoin
+from urllib.parse import quote as url_escape
 
-from playwright.async_api import Browser, expect as pw_expect
+from playwright.async_api import Browser, Locator, Page, expect as pw_expect
 
-from historical_sources_search.collections.base import CollectionBase
-from historical_sources_search.exceptions import NavigationError
-from historical_sources_search.search_result import CollectionInfo, SearchResult
+from historical_sources_search.collections.base_browser_paging import CollectionBaseBrowserPaging
+from historical_sources_search.exceptions import MissingInformationError, NavigationError
+from historical_sources_search.search_result import CollectionInfo
 
 LOGGER = logging.getLogger(__name__)
 
 
-class CollectionConstitutionAnnotated(CollectionBase):
+class CollectionConstitutionAnnotated(CollectionBaseBrowserPaging):
     def __init__(self, browser: Browser):
         super().__init__(
+            browser=browser,
             collection_info=CollectionInfo(
                 name="Constitution Annotated",
                 url="https://constitution.congress.gov/",
             ),
         )
-        self.browser = browser
 
     @override
-    async def search(self, query: str) -> AsyncIterable[SearchResult]:
-        async with (
-            await self.browser.new_context() as browser_context,
-            await browser_context.new_page() as page,
-        ):
-            query_escaped = url_escape(query, safe="")
-            search_url = f"https://constitution.congress.gov/search/{query_escaped}"
-            response = await page.goto(search_url)
-            if response is not None and not response.ok:
-                raise NavigationError(f"Navigation to `{search_url}` failed with status {response.status}")
+    async def _enter_query(self, page: Page, query: str):
+        query_escaped = url_escape(query, safe="")
+        search_url = f"https://constitution.congress.gov/search/{query_escaped}"
+        response = await page.goto(search_url)
+        if response is not None and not response.ok:
+            raise NavigationError(f"Navigation to `{search_url}` failed with status {response.status}")
 
-            try:  # TODO
-                await pw_expect(page.get_by_title("no-results")).to_be_visible(timeout=5_000)
-            except AssertionError:  # does *not* have a "no results" message
-                pass
-            else:  # *does* have a "no results" message
-                LOGGER.info(f"No results found for query {query!r}")
-                return
+    @override
+    def _get_locator_no_results(self, page: Page) -> Locator:
+        return page.get_by_title("no-results")
 
-            page_number = 1
-            while True:  # turn through all pages
-                LOGGER.debug(f"Page number {page_number} of query {query!r}")
+    @override
+    def _get_locator_result_by_index(self, page: Page, index: int) -> Locator:
+        return page.locator("ul.search-results > li").nth(index)
 
-                results_list = page.locator("ul.search-results")
-                await pw_expect(results_list).to_be_visible(timeout=10_000)
-                page_url = page.url
+    @override
+    async def _get_result_url(self, page: Page, result_locator: Locator) -> str:
+        item_title_link = result_locator.locator(".search-results-title").locator("a")
+        item_title_href = await item_title_link.get_attribute("href")
+        if not item_title_href:
+            item_title_link_html = await item_title_link.inner_html()
+            raise MissingInformationError(f"Search result did not have an href: {item_title_link_html}")
+        return item_title_href
 
-                i = 0
-                while True:  # get all results from this page
-                    item = page.locator("ul.search-results > li").nth(i)
-                    try:
-                        await pw_expect(item).to_be_visible(timeout=(10_000 if i == 0 else 500))
-                    except AssertionError:
-                        break  # no more results on this page
+    @override
+    async def _get_result_title(self, page: Page, result_locator: Locator) -> str:
+        return await result_locator.locator(".search-results-title").inner_text()
 
-                    item_title = item.locator(".search-results-title")
-                    item_title_link = item_title.locator("a")
-                    item_title_href = await item_title_link.get_attribute("href")
-                    if not item_title_href:
-                        item_title_link_html = await item_title_link.inner_html()
-                        LOGGER.warning(f"Search result did not have an href: {item_title_link_html}")
-                        continue
-                    item_title_href = urljoin(page_url, item_title_href)
-                    item_title_str = (await item_title.inner_text()).strip()
-                    item_description = (await item.locator(".search-results-summary").inner_text()).strip()
+    @override
+    async def _get_result_detail(self, page: Page, result_locator: Locator) -> str | None:
+        return await result_locator.locator(".search-results-summary").inner_text()
 
-                    yield SearchResult(
-                        url=item_title_href,
-                        title=item_title_str,
-                        detail=item_description,
-                        image_src=None,
-                        provided_by_collection=self.collection_info,
-                    )
-                    i += 1
+    @override
+    async def _get_result_image_src(self, page: Page, result_locator: Locator) -> str | None:
+        return None
 
-                # advance the page, if possible
-                next_page_button = page.locator(".search-results-control-pagination").get_by_role(
-                    role="link",
-                    name=str(page_number + 1),
-                    exact=True,
-                )
-                try:
-                    await pw_expect(next_page_button).to_be_visible(timeout=1_000)
-                except AssertionError:
-                    break  # no more pages
-                await next_page_button.click()
-                page_number += 1
+    @override
+    async def _advance_page(self, page: Page, current_page_index: int) -> bool:
+        current_page_number = current_page_index + 1
+        new_page_number = current_page_number + 1
+        locator_pagination = page.locator(".search-results-control-pagination")
+        next_page_button = locator_pagination.get_by_role("link", name=str(new_page_number), exact=True)
+        try:
+            await pw_expect(next_page_button).to_be_visible(timeout=1_000)
+        except AssertionError:
+            return False  # no more pages
+        await next_page_button.click()
+        await pw_expect(locator_pagination.locator(".pagination-item.active")).to_be_visible(timeout=30_000)
+        return True
