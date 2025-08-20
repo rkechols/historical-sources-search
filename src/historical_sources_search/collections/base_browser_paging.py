@@ -10,13 +10,12 @@ from historical_sources_search.collections.base import CollectionBase
 from historical_sources_search.exceptions import MissingInformationError
 from historical_sources_search.search_result import CollectionInfo, SearchResult
 
-LOGGER = logging.getLogger(__name__)
-
 
 class CollectionBaseBrowserPaging(CollectionBase):
-    def __init__(self, browser: Browser, collection_info: CollectionInfo):
+    def __init__(self, browser: Browser, collection_info: CollectionInfo, logger: logging.Logger | None):
         super().__init__(collection_info=collection_info)
         self.browser = browser
+        self.logger = logger or logging.getLogger(__name__)
 
     @abstractmethod
     async def _enter_query(self, page: Page, query: str):
@@ -93,12 +92,12 @@ class CollectionBaseBrowserPaging(CollectionBase):
             # wait for page to load either the first result or a "no result" element
             await pw_expect(locator_first_result.or_(locator_no_results).first).to_be_visible(timeout=30_000)
             if await locator_no_results.is_visible():
-                LOGGER.info(f"No results found for query {query!r}")
+                self.logger.info(f"No results found for query {query!r}")
                 return
 
             page_index = 0
             while True:  # turn through all pages
-                LOGGER.debug(f"Page number {page_index + 1} of query {query!r}")
+                self.logger.debug(f"Page number {page_index + 1} of query {query!r}")
                 page_url = page.url
 
                 i = 0
@@ -121,7 +120,10 @@ class CollectionBaseBrowserPaging(CollectionBase):
                         if result_image_src is not None:
                             result_image_src = urljoin(page_url, result_image_src)
                     except MissingInformationError:
-                        LOGGER.warning(f"Skipping {page_index=} {i=} because of missing information", exc_info=True)
+                        self.logger.warning(
+                            f"Skipping {page_index=} {i=} because of missing information",
+                            exc_info=True,
+                        )
                         # don't forget to increment `i` even though we're skipping this one
                     else:
                         yield SearchResult(

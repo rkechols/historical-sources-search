@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import override
 from urllib.parse import urlencode
@@ -31,6 +32,7 @@ class CollectionFacingHistory(CollectionBaseBrowserPaging):
                 name="Facing History",
                 url="https://www.facinghistory.org/resource-library",
             ),
+            logger=logging.getLogger(f"{__name__}.paging"),
         )
 
     @override

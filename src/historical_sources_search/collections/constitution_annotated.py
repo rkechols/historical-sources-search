@@ -8,8 +8,6 @@ from historical_sources_search.collections.base_browser_paging import Collection
 from historical_sources_search.exceptions import MissingInformationError, NavigationError
 from historical_sources_search.search_result import CollectionInfo
 
-LOGGER = logging.getLogger(__name__)
-
 
 class CollectionConstitutionAnnotated(CollectionBaseBrowserPaging):
     def __init__(self, browser: Browser):
@@ -19,6 +17,7 @@ class CollectionConstitutionAnnotated(CollectionBaseBrowserPaging):
                 name="Constitution Annotated",
                 url="https://constitution.congress.gov/",
             ),
+            logger=logging.getLogger(f"{__name__}.paging"),
         )
 
     @override

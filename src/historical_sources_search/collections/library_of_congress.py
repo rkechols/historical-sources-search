@@ -8,8 +8,6 @@ from historical_sources_search.collections.base_browser_paging import Collection
 from historical_sources_search.exceptions import MissingInformationError, NavigationError
 from historical_sources_search.search_result import CollectionInfo
 
-LOGGER = logging.getLogger(__name__)
-
 
 class CollectionLibraryOfCongress(CollectionBaseBrowserPaging):
     def __init__(self, browser: Browser):
@@ -19,6 +17,7 @@ class CollectionLibraryOfCongress(CollectionBaseBrowserPaging):
                 name="Classroom Materials at the Library of Congress",
                 url="https://www.loc.gov/classroom-materials/?fa=partof_type%3Aprimary+source+set",
             ),
+            logger=logging.getLogger(f"{__name__}.paging"),
         )
 
     @override
@@ -28,11 +27,10 @@ class CollectionLibraryOfCongress(CollectionBaseBrowserPaging):
                 "q": query,
                 "fa": "partof_type:primary source set",
                 "st": "list",
-                # "c": "150",  # results per page
+                "c": "150",  # results per page
             }
         )
         search_url = f"https://www.loc.gov/classroom-materials/?{url_params}"
-        LOGGER.debug(f"Search url: {search_url}")
         response = await page.goto(search_url)
         if response is not None and not response.ok:
             raise NavigationError(f"Navigation to `{search_url}` failed with status {response.status}")
