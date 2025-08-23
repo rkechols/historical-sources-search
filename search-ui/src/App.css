@@ -77,7 +77,10 @@
   margin-top: 2em;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .results-title {
@@ -100,8 +103,6 @@
   display: flex;
   align-items: flex-start;
   gap: 1.2em;
-  width: 100%;
-  max-width: 600px;
   transition: box-shadow 0.2s;
 }
 .result-card:hover {
@@ -127,8 +128,10 @@
   font-weight: 600;
   color: #e0e0e0;
   margin-bottom: 0.3em;
+  text-decoration: underline;
 }
 .result-card-detail {
   color: #bfc8d0;
   font-size: 1em;
+  text-align: left;
 }
