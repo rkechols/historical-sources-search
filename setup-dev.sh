@@ -3,6 +3,8 @@
 set -e
 cd "$(dirname "$0")"
 
+git update-index --assume-unchanged src/historical_sources_search/static/index.html  # ignore local changes
+
 # check prerequisites
 if ! command -v uv > /dev/null ; then
     echo "Please install uv (https://docs.astral.sh/uv/getting-started/installation/)"

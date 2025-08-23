@@ -1,9 +1,12 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated, cast
 
 import httpx
 from fastapi import Depends, FastAPI, Request
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from playwright.async_api import Browser, Playwright, async_playwright
 from pydantic import BaseModel
 
@@ -44,8 +47,24 @@ BrowserDep = Annotated[Browser, Depends(_browser_dep)]
 api = FastAPI(lifespan=_lifespan)
 
 
+api.mount("/app", StaticFiles(directory=Path(__file__).parent / "static"))
+
+
+_REDIRECT_TO_UI = RedirectResponse("/app/index.html")
+
+
 @api.get("/")
-async def get_root() -> dict[str, str]:
+async def get_root() -> RedirectResponse:
+    return _REDIRECT_TO_UI
+
+
+@api.get("/app")
+async def get_app() -> RedirectResponse:
+    return _REDIRECT_TO_UI
+
+
+@api.get("/status")
+async def get_status() -> dict[str, str]:
     return {"status": "ok"}
 
 
