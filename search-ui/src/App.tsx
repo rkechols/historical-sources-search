@@ -44,7 +44,12 @@ function App() {
           </span>
         </a>
         <div className="search-bar">
-          <input id="search-query" aria-label="search-query" type="text" placeholder="Type your search query here" ref={queryInputRef} />
+          <input
+            ref={queryInputRef}
+            id="search-query" aria-label="search-query"
+            type="text" placeholder="Type your search query here"
+            onKeyDown={(e) => { if (e.key === "Enter") submitQuery() }}
+          />
           <button id="search-query-submit" aria-label="search-query-submit" type="button" onClick={submitQuery} disabled={searchInProgress}>
             Search
           </button>
