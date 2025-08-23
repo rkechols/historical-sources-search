@@ -1,4 +1,4 @@
-import type SearchResult from "../models/search-results.ts"
+import type SearchResult from "../models/search-result.ts"
 
 interface SearchResultCardProps {
   searchResult: SearchResult

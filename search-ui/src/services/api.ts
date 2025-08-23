@@ -1,4 +1,4 @@
-import type SearchResult from "../models/search-results"
+import type SearchResult from "../models/search-result"
 
 export class APIError extends Error {
   constructor(message: string) {

@@ -2,14 +2,15 @@ import { useState, useRef } from "react"
 import "./App.css"
 import { FaGithub } from "react-icons/fa"
 import api from "./services/api.ts"
-import type { SearchStateError, SearchStateI, SearchStatePending, SearchStateSuccess } from "./components/SearchState.tsx"
-import SearchState from "./components/SearchState.tsx"
+import type { SearchStateI} from "./components/SearchResults.tsx"
+import { SearchStateError, SearchStatePending, SearchStateSuccess } from "./components/SearchResults.tsx"
+import SearchResults from "./components/SearchResults.tsx"
 
 function App() {
   const queryInputRef = useRef<HTMLInputElement | null>(null)
   const [searchState, setSearchState] = useState<SearchStateI | null>(null)
 
-  const searchInProgress = searchState?.type === "pending"
+  const searchInProgress = searchState instanceof SearchStatePending
 
   function submitQuery() {
     const queryInput = queryInputRef.current
@@ -20,16 +21,16 @@ function App() {
     const query = queryInput.value
 
     console.log(`Submitting query: ${query}`)
-    setSearchState({ type: "pending", query } as SearchStatePending)
+    setSearchState(new SearchStatePending(query))
     api.postSearch(query).then(newSearchResponse => {
-      setSearchState({ type: "success", query, results: newSearchResponse.results } as SearchStateSuccess)
+    setSearchState(new SearchStateSuccess(query, newSearchResponse.results))
     }).catch((error: unknown) => {
       if (error instanceof Error) {
         console.error(`Error occurred while executing search: ${error.message}`)
       } else {
         console.error("Non-Error object caught:", error)
       }
-      setSearchState({ type: "error", query } as SearchStateError)
+      setSearchState(new SearchStateError(query))
     })
   }
 
@@ -48,7 +49,7 @@ function App() {
           Search
         </button>
       </div>
-      <SearchState searchState={searchState} />
+      <SearchResults searchState={searchState} />
     </>
   )
 }
