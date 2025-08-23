@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/media" />
+      <excludeFolder url="file://$MODULE_DIR$/src/historical_sources_search/static" />
     </content>
     <orderEntry type="jdk" jdkName=".venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
