@@ -27,23 +27,23 @@ interface SearchResultsProps {
 
 function SearchResults({ searchState }: SearchResultsProps) {
   if (searchState == null) {
-    return <p>Enter a search query to begin.</p>
+    return <p className="results-title">Enter a search query to begin.</p>
   }
   if (searchState instanceof SearchStatePending) {
     // TODO: add a spinner
       return <div>
-        <p>Search pending: {searchState.query}</p>
+        <p className="results-title">Search pending: {searchState.query}</p>
         <FaSpinner className="spinner" />
       </div>
   }
   if (searchState instanceof SearchStateSuccess) {
     const { query, results } = searchState
     if (results.length === 0) {
-      return <p>No results found for: {query}</p>
+      return <p className="results-title">No results found for: {query}</p>
     }
     return (
       <>
-        <h2 className="results-title">Search Results for: {query}</h2>
+        <p className="results-title">Search Results for: {query}</p>
         {results.map(result => (
           <SearchResultCard key={result.url} searchResult={result} />
         ))}
