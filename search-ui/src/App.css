@@ -62,11 +62,15 @@
 }
 
 #search-query-submit {
-  background: linear-gradient(90deg, #219ebc 0%, #8ecae6 100%);
+  background: #219ebc;
+  transition: background-color 0.25s;
   color: #fff;
   border: none;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(33,158,188,0.08);
+}
+#search-query-submit:hover {
+  background: #8ecae6;
 }
 #search-query-submit:disabled {
   opacity: 0.6;
