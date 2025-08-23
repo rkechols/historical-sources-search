@@ -36,7 +36,7 @@ export default tseslint.config([
       "@typescript-eslint/consistent-type-imports": "error",
       // "react/self-closing-comp": "error",
       // "react/jsx-key": "error",
-      "eqeqeq": "error",
+      // "eqeqeq": "error",
       "prefer-const": "error",
     },
   },

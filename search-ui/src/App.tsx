@@ -1,12 +1,15 @@
 import { useState, useRef } from "react"
 import "./App.css"
 import { FaGithub } from "react-icons/fa"
-import SearchResults from "./components/SearchResults.tsx"
-import type SearchResult from "./models/search-results.ts"
+import api from "./services/api.ts"
+import type { SearchStateError, SearchStateI, SearchStatePending, SearchStateSuccess } from "./components/SearchState.tsx"
+import SearchState from "./components/SearchState.tsx"
 
 function App() {
   const queryInputRef = useRef<HTMLInputElement | null>(null)
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchState, setSearchState] = useState<SearchStateI | null>(null)
+
+  const searchInProgress = searchState?.type === "pending"
 
   function submitQuery() {
     const queryInput = queryInputRef.current
@@ -16,16 +19,18 @@ function App() {
     }
     const query = queryInput.value
 
-    // TODO
-    console.log(`TODO - submit query: ${query}`)
-    setSearchResults((results) => [...results, {
-      url: `https://github.com/rkechols/historical-sources-search?ignore=${results.length.toString()}`,
-      title: query,
-      provided_by_collection: {
-        name: "Fake",
-        url: "https://www.fake.com",
-      },
-    }])
+    console.log(`Submitting query: ${query}`)
+    setSearchState({ type: "pending", query } as SearchStatePending)
+    api.postSearch(query).then(newSearchResponse => {
+      setSearchState({ type: "success", query, results: newSearchResponse.results } as SearchStateSuccess)
+    }).catch((error: unknown) => {
+      if (error instanceof Error) {
+        console.error(`Error occurred while executing search: ${error.message}`)
+      } else {
+        console.error("Non-Error object caught:", error)
+      }
+      setSearchState({ type: "error", query } as SearchStateError)
+    })
   }
 
   return (
@@ -39,11 +44,11 @@ function App() {
       </a>
       <div className="card">
         <input id="search-query" aria-label="search-query" type="text" placeholder="Type your search query here" ref={queryInputRef} />
-        <button id="search-query-submit" aria-label="search-query-submit" type="button" onClick={submitQuery}>
+        <button id="search-query-submit" aria-label="search-query-submit" type="button" onClick={submitQuery} disabled={searchInProgress}>
           Search
         </button>
       </div>
-      <SearchResults results={searchResults} />
+      <SearchState searchState={searchState} />
     </>
   )
 }
