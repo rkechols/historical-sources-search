@@ -33,7 +33,9 @@ function SearchResults({ searchState }: SearchResultsProps) {
     // TODO: add a spinner
       return <div>
         <p className="results-title">Search pending: {searchState.query}</p>
-        <FaSpinner className="spinner" />
+        <span aria-hidden="true">
+          <FaSpinner className="spinner" />
+        </span>
       </div>
   }
   if (searchState instanceof SearchStateSuccess) {
