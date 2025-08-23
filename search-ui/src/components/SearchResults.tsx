@@ -37,12 +37,14 @@ function SearchResults({ searchState }: SearchResultsProps) {
     if (results.length === 0) {
       return <p>No results found for: {query}</p>
     }
-    return <div>
-      <h2>Search Results for: {query}</h2>
-      { results.map(result => (
-        <SearchResultCard key={result.url} searchResult={result} />
-      ))}
-    </div>
+    return (
+      <>
+        <h2 className="results-title">Search Results for: {query}</h2>
+        {results.map(result => (
+          <SearchResultCard key={result.url} searchResult={result} />
+        ))}
+      </>
+    )
   }
   if (searchState instanceof SearchStateError) {
     return <p>Unexpected error when searching for: {searchState.query}</p>

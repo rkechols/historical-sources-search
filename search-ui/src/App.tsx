@@ -35,22 +35,24 @@ function App() {
   }
 
   return (
-    <>
-      <h1>Historical Sources Search</h1>
-      <a href="https://github.com/rkechols/historical-sources-search" target="_blank" rel="noopener noreferrer">
-        Source Code on GitHub
-        <span aria-hidden="true">
-          <FaGithub />
-        </span>
-      </a>
-      <div className="card">
-        <input id="search-query" aria-label="search-query" type="text" placeholder="Type your search query here" ref={queryInputRef} />
-        <button id="search-query-submit" aria-label="search-query-submit" type="button" onClick={submitQuery} disabled={searchInProgress}>
-          Search
-        </button>
+      <div className="app-container">
+        <h1 className="app-title">Historical Sources Search</h1>
+        <a className="github-link" href="https://github.com/rkechols/historical-sources-search" target="_blank" rel="noopener noreferrer">
+          Source Code on GitHub
+          <span aria-hidden="true">
+            <FaGithub />
+          </span>
+        </a>
+        <div className="search-bar">
+          <input id="search-query" aria-label="search-query" type="text" placeholder="Type your search query here" ref={queryInputRef} />
+          <button id="search-query-submit" aria-label="search-query-submit" type="button" onClick={submitQuery} disabled={searchInProgress}>
+            Search
+          </button>
+        </div>
+        <div className="results-container">
+          <SearchResults searchState={searchState} />
+        </div>
       </div>
-      <SearchResults searchState={searchState} />
-    </>
   )
 }
 
