@@ -1,5 +1,6 @@
 import type SearchResult from "../models/search-result"
 import SearchResultCard from "./SearchResultCard"
+import { FaSpinner } from "react-icons/fa"
 
 export class SearchStateI {
   query: string
@@ -30,7 +31,10 @@ function SearchResults({ searchState }: SearchResultsProps) {
   }
   if (searchState instanceof SearchStatePending) {
     // TODO: add a spinner
-    return <p>Search pending: {searchState.query}</p>
+      return <div>
+        <p>Search pending: {searchState.query}</p>
+        <FaSpinner className="spinner" />
+      </div>
   }
   if (searchState instanceof SearchStateSuccess) {
     const { query, results } = searchState
